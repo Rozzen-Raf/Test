@@ -1,0 +1,3 @@
+﻿  SERVER1.cpp
+F:\ТЗ\TZ!\SERVER1\SERVER1\SERVER1.cpp(167,22): warning C4018:  >: несоответствие типов со знаком и без знака
+  SERVER1.vcxproj -> F:\ТЗ\TZ!\SERVER1\Debug\SERVER1.exe
