@@ -1,4 +1,4 @@
-﻿#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "ws2_32.lib")
 #include <winsock2.h>
 #include <iostream>
 #include <mutex>
@@ -12,7 +12,7 @@ std::condition_variable cv;
 std::mutex mtx;
 bool g_d = false;
 
-
+// Принятие сообщений и вывод в консоль
 void ClientHandler() {
 
 	
@@ -41,6 +41,7 @@ void librun() {
 		exit(1);
 	}
 }
+//Функция подключения к серверу
 int Connection_fun(SOCKADDR_IN addr){
 	Connection = socket(AF_INET, SOCK_STREAM, NULL);
 	if (connect(Connection, (SOCKADDR*)& addr, sizeof(addr)) != 0) {
@@ -50,6 +51,7 @@ int Connection_fun(SOCKADDR_IN addr){
 	}
 	std::cout << "Connected!\n";
 }
+//Основная функция
 int main(int argc, char* argv[]) {
 	librun();
 	SOCKADDR_IN addr;
@@ -64,10 +66,9 @@ int main(int argc, char* argv[]) {
 	
 	
 	std::thread thread(ClientHandler);
-	fd_set read_fds;
-	FD_ZERO(&read_fds);
-	FD_SET(Connection, &read_fds);
+	
 	char msg1[256];
+	//Написание  и отправка сообщения
 	while (true) {
 		
 		std::cin.getline(msg1, sizeof(msg1));
