@@ -1,4 +1,4 @@
-﻿#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "ws2_32.lib")
 #include <winsock2.h>
 #include <iostream>
 #include <mutex>
@@ -7,46 +7,10 @@
 #include <queue>
 #pragma warning(disable: 4996)
 using namespace std;
+const int sizeofarray = 256;
 //Структура очереди буферов
 struct que {
-	char qu[50][256] = {};
-	int back_i, front_i, n = 50;
-public:
-	que() {
-		front_i = 1;
-		back_i = 0;
-	}
-	//Добавление буфера с сообщением в очередь
-	void push(char buf[256], int size) {
-		if (back_i < n - 1) {
-			for (int i = 0; i < size; ++i) {
-				qu[back_i][i] = buf[i];
-			}
-			back_i++;
-		}
-		else {
-			cout << "Queue overloaded" << endl;
-		}
-	}
-	//проверка пустая ли очередь
-	bool empty() {
-		if (back_i < front_i) return 1;
-		return 0;
-	}
-	//освобождение буфера из очереди
-	void pop() {
-
-		if (this->empty())cout << "Queue empty" << endl;
-		else {
-			for (int i = 0; i < back_i; ++i) {
-				for (int j = 0; j < sizeof(qu[i]); ++j) {
-
-					qu[i][j] = qu[i + 1][j];
-				}
-			}
-			back_i--;
-		}
-	}
+	char qu[sizeofarray] = {};
 };
 
 
@@ -56,16 +20,12 @@ fd_set master;
 int fd_max;
 mutex mtx, mtx1;
 bool g_d;
-que buf;
+queue<que> buf;
 queue<int> address;
 
 
 // Функция обработки буфера и отправки сообщения другим клиентам
 void ClientHandler() {
-
-	
-
-
 	while (true) {
 		
 		// Поток засыпает в ожидании пополнения очереди
@@ -78,7 +38,7 @@ void ClientHandler() {
 		fd_set read_fds;
 		FD_ZERO(&read_fds);
 		int fd_max_temp, add,sL_temp;
-		que buf_temp;
+		queue<que> buf_temp;
 		{
 			lock_guard<mutex> lk1(mtx1);
 			read_fds = master;
@@ -95,13 +55,14 @@ void ClientHandler() {
 				if (FD_ISSET(j, &read_fds)) {
 					if (j != add && j != sL_temp) {
 
-						send(j, buf_temp.qu[0], sizeof(buf_temp.qu[0]), NULL);
+						send(j, buf_temp.front().qu, sizeof(buf_temp.front().qu), NULL);
 
 					}
 				}
 			}
 			{
 				lock_guard<mutex> lk1(mtx1);
+				queue<que> z = buf;
 				address.pop();
 				buf.pop(); 
 			}
@@ -114,8 +75,9 @@ void ClientHandler() {
 }
 //Функция чтения присланных сообщений,также закрывает оборванные соединения
 void reading(int i) {
-	char msg[256];
-	if (recv(i, msg, sizeof(msg), NULL) <= 0) {
+	que msg;
+	int sizeofmsg = sizeof(msg);
+	if (recv(i, msg.qu, sizeof(msg.qu), NULL) <= 0) {
 
 		shutdown(i, 2);
 		closesocket(i);
@@ -123,7 +85,7 @@ void reading(int i) {
 	}
 	else {
 		lock_guard<mutex> lk(mtx);
-		buf.push(msg,sizeof(msg));
+		buf.push(msg);
 		address.push(i);
 		g_d = true;
 		cv.notify_one();
